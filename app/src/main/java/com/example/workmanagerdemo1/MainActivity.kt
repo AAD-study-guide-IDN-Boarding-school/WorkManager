@@ -1,5 +1,6 @@
 package com.example.workmanagerdemo1
 
+import DownloadingWorker
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.widget.Toast
@@ -48,7 +49,21 @@ class MainActivity : AppCompatActivity() {
             .setInputData(data)
             .build()
 
-        workManager.enqueue(uploadRequest)
+        val filteringWorker = OneTimeWorkRequest.Builder(FilteringWorker::class.java).build()
+        val compressWorker = OneTimeWorkRequest.Builder(CompressWorker::class.java).build()
+        val downloadingWorker = OneTimeWorkRequest.Builder(DownloadingWorker::class.java).build()
+
+        val parallelWorker = mutableListOf<OneTimeWorkRequest>()
+        parallelWorker.add(downloadingWorker)
+        parallelWorker.add(filteringWorker)
+
+
+        // urutan workmanager saat run dari begin - then(uploadRequest)
+        workManager
+            .beginWith(parallelWorker)
+            .then(compressWorker)
+            .then(uploadRequest)
+            .enqueue()
 
         // mendapatkan status workmanager
         workManager.getWorkInfoByIdLiveData(uploadRequest.id)
